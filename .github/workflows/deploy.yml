@@ -1,0 +1,64 @@
+name: CI/CD Pipeline & GitHub Pages Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  test_and_build:
+    name: Test, Analyze and Build Flutter Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Instalar Dependências
+        run: flutter pub get
+
+      - name: 🔍 Análise Estática de Código
+        run: flutter analyze
+
+      - name: 🧪 Executar Testes Unitários e de Widget
+        run: flutter test
+
+      - name: 🌐 Build Flutter Web (Produção)
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      - name: 📤 Upload Artifact para GitHub Pages
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: test_and_build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 🚀 Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
