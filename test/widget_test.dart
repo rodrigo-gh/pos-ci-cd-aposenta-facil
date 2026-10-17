@@ -13,5 +13,13 @@ void main() {
     expect(find.byType(AposentaFacilApp), findsOneWidget);
     expect(find.text('Parâmetros da Simulação'), findsOneWidget);
     expect(find.text('Copiar Resumo'), findsOneWidget);
+    expect(find.byIcon(Icons.light_mode), findsOneWidget);
+
+    // Alterna para o Modo Claro
+    await tester.tap(find.byIcon(Icons.light_mode));
+    await tester.pumpAndSettle();
+
+    // No modo claro, o botão deve exibir o ícone de lua para voltar ao escuro
+    expect(find.byIcon(Icons.dark_mode), findsOneWidget);
   });
 }

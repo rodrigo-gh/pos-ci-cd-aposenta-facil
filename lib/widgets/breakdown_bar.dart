@@ -18,13 +18,15 @@ class CompoundBreakdownBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
+        color: colors.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant),
+        border: Border.all(color: colors.outlineVariant),
+        boxShadow: colors.cardShadow,
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -39,13 +41,13 @@ class CompoundBreakdownBar extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.all_inclusive, color: AppColors.tertiary, size: 20),
+                  Icon(Icons.all_inclusive, color: colors.tertiary, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'O Poder dos Juros Compostos',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.onSurface,
+                          color: colors.onSurface,
                         ),
                   ),
                 ],
@@ -53,18 +55,19 @@ class CompoundBreakdownBar extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
+                  color: colors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: colors.outlineVariant),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.rocket_launch, color: AppColors.tertiary, size: 14),
-                    SizedBox(width: 4),
+                    Icon(Icons.rocket_launch, color: colors.tertiary, size: 14),
+                    const SizedBox(width: 4),
                     Text(
                       'Efeito Multiplicador',
                       style: TextStyle(
-                        color: AppColors.tertiary,
+                        color: colors.tertiary,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
@@ -84,11 +87,11 @@ class CompoundBreakdownBar extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: depositPercent > 0 ? depositPercent : 1,
-                    child: Container(color: AppColors.primary),
+                    child: Container(color: colors.primary),
                   ),
                   Expanded(
                     flex: interestPercent > 0 ? interestPercent : 1,
-                    child: Container(color: AppColors.tertiary),
+                    child: Container(color: colors.tertiary),
                   ),
                 ],
               ),
@@ -109,8 +112,8 @@ class CompoundBreakdownBar extends StatelessWidget {
                     width: 12,
                     height: 12,
                     margin: const EdgeInsets.only(top: 4, right: 8),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
+                    decoration: BoxDecoration(
+                      color: colors.primary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -120,21 +123,22 @@ class CompoundBreakdownBar extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Aporte do seu bolso',
-                            style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
                           ),
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceContainerHigh,
+                              color: colors.surfaceContainerHigh,
                               borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: colors.outlineVariant),
                             ),
                             child: Text(
                               '$depositPercent%',
-                              style: const TextStyle(
-                                color: AppColors.primary,
+                              style: TextStyle(
+                                color: colors.primary,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -145,16 +149,16 @@ class CompoundBreakdownBar extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         currencyFormatter.format(totalDeposited),
-                        style: const TextStyle(
-                          color: AppColors.onSurface,
+                        style: TextStyle(
+                          color: colors.onSurface,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'monospace',
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Inicial + aportes somados',
-                        style: TextStyle(color: AppColors.secondary, fontSize: 11),
+                        style: TextStyle(color: colors.secondary, fontSize: 11),
                       ),
                     ],
                   ),
@@ -169,8 +173,8 @@ class CompoundBreakdownBar extends StatelessWidget {
                     width: 12,
                     height: 12,
                     margin: const EdgeInsets.only(top: 4, right: 8),
-                    decoration: const BoxDecoration(
-                      color: AppColors.tertiary,
+                    decoration: BoxDecoration(
+                      color: colors.tertiary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -180,21 +184,21 @@ class CompoundBreakdownBar extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Juros acumulados',
-                            style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
                           ),
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.tertiaryContainer,
+                              color: colors.tertiaryContainer,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               '$interestPercent%',
-                              style: const TextStyle(
-                                color: AppColors.onTertiaryContainer,
+                              style: TextStyle(
+                                color: colors.onTertiaryContainer,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -205,16 +209,16 @@ class CompoundBreakdownBar extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         currencyFormatter.format(totalInterest),
-                        style: const TextStyle(
-                          color: AppColors.tertiary,
+                        style: TextStyle(
+                          color: colors.tertiary,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'monospace',
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Lucro exponencial gerado pelo tempo',
-                        style: TextStyle(color: AppColors.secondary, fontSize: 11),
+                        style: TextStyle(color: colors.secondary, fontSize: 11),
                       ),
                     ],
                   ),

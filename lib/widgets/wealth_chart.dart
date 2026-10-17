@@ -31,11 +31,14 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
+        color: colors.surfaceContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.outlineVariant),
+        border: Border.all(color: colors.outlineVariant),
+        boxShadow: colors.cardShadow,
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -54,34 +57,36 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
                     'Evolução Patrimonial ao Longo do Tempo',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.onSurface,
+                          color: colors.onSurface,
                         ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     'Projeção de acumulação: valor aportado vs. rentabilidade de juros compostos',
-                    style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+                    style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
                   ),
                 ],
               ),
               // View toggle buttons (Gráfico vs Tabela)
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLowest,
+                  color: colors.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.outlineVariant),
+                  border: Border.all(color: colors.outlineVariant),
                 ),
                 padding: const EdgeInsets.all(2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildViewButton(
+                      colors: colors,
                       icon: Icons.show_chart,
                       label: 'Gráfico',
                       isSelected: !_showTable,
                       onTap: () => setState(() => _showTable = false),
                     ),
                     _buildViewButton(
+                      colors: colors,
                       icon: Icons.table_chart_outlined,
                       label: 'Tabela',
                       isSelected: _showTable,
@@ -98,68 +103,31 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
             Wrap(
               spacing: 16,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text('Total Investido', style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: AppColors.tertiary,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Patrimônio Líquido Acumulado',
-                      style: TextStyle(color: AppColors.tertiary, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+                _buildLegendItem(colors.primary, 'Total Investido (Do seu bolso)'),
+                _buildLegendItem(colors.tertiary, 'Patrimônio Líquido Acumulado'),
               ],
             ),
             const SizedBox(height: 16),
-            // Canvas with MouseRegion for interactive hover
-            MouseRegion(
-              onHover: (event) {
-                final RenderBox? box = context.findRenderObject() as RenderBox?;
-                if (box != null && widget.projection.isNotEmpty) {
-                  const leftMargin = 55.0;
-                  final plotWidth = box.size.width - 40 - leftMargin;
-                  final localX = event.localPosition.dx - leftMargin;
-                  if (localX >= 0 && localX <= plotWidth && plotWidth > 0) {
-                    final index = ((localX / plotWidth) * (widget.projection.length - 1)).round();
-                    setState(() {
-                      _hoveredIndex = index.clamp(0, widget.projection.length - 1);
-                    });
+            // Custom Painted Vector Chart
+            SizedBox(
+              height: 280,
+              width: double.infinity,
+              child: MouseRegion(
+                onHover: (event) {
+                  final RenderBox? box = context.findRenderObject() as RenderBox?;
+                  if (box != null && widget.projection.isNotEmpty) {
+                    final local = event.localPosition;
+                    const leftMargin = 55.0;
+                    final plotW = box.size.width - leftMargin - 40;
+                    if (local.dx >= leftMargin && plotW > 0) {
+                      final ratio = ((local.dx - leftMargin) / plotW).clamp(0.0, 1.0);
+                      final index = (ratio * (widget.projection.length - 1)).round();
+                      setState(() => _hoveredIndex = index);
+                    }
                   }
-                }
-              },
-              onExit: (_) => setState(() => _hoveredIndex = null),
-              child: Container(
-                height: 220,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLowest.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.fromLTRB(8, 20, 16, 8),
+                },
+                onExit: (_) => setState(() => _hoveredIndex = null),
                 child: CustomPaint(
-                  size: Size.infinite,
                   painter: _WealthChartPainter(
                     projection: widget.projection,
                     targetWealth: widget.targetWealth,
@@ -167,7 +135,9 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
                     currentAge: widget.currentAge,
                     targetAge: widget.targetAge,
                     hoveredIndex: _hoveredIndex,
+                    palette: colors,
                   ),
+                  child: Container(),
                 ),
               ),
             ),
@@ -176,20 +146,20 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
+                  color: colors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.tertiary.withValues(alpha: 0.4)),
+                  border: Border.all(color: colors.tertiary.withValues(alpha: 0.4)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Aos ${widget.projection[_hoveredIndex!].age} anos ($_hoveredIndex anos de aportes):',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: colors.onSurface),
                     ),
                     Text(
                       'Patrimônio: ${_currencyFormat.format(widget.projection[_hoveredIndex!].totalWealth)}  |  Renda mensal: ${_currencyFormat.format(widget.projection[_hoveredIndex!].monthlyPassiveIncome)}/mês',
-                      style: const TextStyle(color: AppColors.tertiary, fontWeight: FontWeight.bold, fontSize: 12, fontFamily: 'monospace'),
+                      style: TextStyle(color: colors.tertiary, fontWeight: FontWeight.bold, fontSize: 12, fontFamily: 'monospace'),
                     ),
                   ],
                 ),
@@ -202,11 +172,11 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
                 children: [
                   Text(
                     'Ponto de Partida: ${_currencyFormat.format(widget.projection.isNotEmpty ? widget.projection.first.totalWealth : 0)}',
-                    style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontFamily: 'monospace'),
+                    style: TextStyle(color: colors.secondary, fontSize: 11, fontFamily: 'monospace'),
                   ),
-                  const Text(
+                  Text(
                     'Passe o mouse na curva para inspecionar cada ano',
-                    style: TextStyle(color: AppColors.secondary, fontSize: 11),
+                    style: TextStyle(color: colors.secondary, fontSize: 11),
                   ),
                 ],
               ),
@@ -217,7 +187,7 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
               child: SingleChildScrollView(
                 child: Table(
                   border: TableBorder(
-                    horizontalInside: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5), width: 1),
+                    horizontalInside: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.5), width: 1),
                   ),
                   columnWidths: const {
                     0: FlexColumnWidth(1.2),
@@ -227,21 +197,21 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
                   },
                   children: [
                     TableRow(
-                      decoration: const BoxDecoration(color: AppColors.surfaceContainerHigh),
+                      decoration: BoxDecoration(color: colors.surfaceContainerHigh),
                       children: [
-                        _buildTableHeaderCell('Idade'),
-                        _buildTableHeaderCell('Total Investido'),
-                        _buildTableHeaderCell('Patrimônio Total'),
-                        _buildTableHeaderCell('Renda Passiva/Mês'),
+                        _buildTableHeaderCell('Idade', colors),
+                        _buildTableHeaderCell('Total Investido', colors),
+                        _buildTableHeaderCell('Patrimônio Total', colors),
+                        _buildTableHeaderCell('Renda Passiva/Mês', colors),
                       ],
                     ),
                     for (final point in widget.projection)
                       TableRow(
                         children: [
-                          _buildTableCell('${point.age} anos (${point.yearOffset}º ano)', isBold: point.yearOffset == widget.inflectionYear),
-                          _buildTableCell(_currencyFormat.format(point.totalDeposited)),
-                          _buildTableCell(_currencyFormat.format(point.totalWealth), textColor: AppColors.tertiary, isBold: true),
-                          _buildTableCell(_currencyFormat.format(point.monthlyPassiveIncome)),
+                          _buildTableCell('${point.age} anos (${point.yearOffset}º ano)', colors, isBold: point.yearOffset == widget.inflectionYear),
+                          _buildTableCell(_currencyFormat.format(point.totalDeposited), colors),
+                          _buildTableCell(_currencyFormat.format(point.totalWealth), colors, textColor: colors.tertiary, isBold: true),
+                          _buildTableCell(_currencyFormat.format(point.monthlyPassiveIncome), colors),
                         ],
                       ),
                   ],
@@ -255,6 +225,7 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
   }
 
   Widget _buildViewButton({
+    required FinancialPalette colors,
     required IconData icon,
     required String label,
     required bool isSelected,
@@ -264,22 +235,27 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.surfaceContainerHigh : Colors.transparent,
+          color: isSelected ? colors.surfaceContainer : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
+          border: isSelected ? Border.all(color: colors.outlineVariant) : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: isSelected ? AppColors.onSurface : AppColors.onSurfaceVariant),
+            Icon(
+              icon,
+              size: 14,
+              color: isSelected ? colors.onSurface : colors.secondary,
+            ),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                color: isSelected ? colors.onSurface : colors.secondary,
               ),
             ),
           ],
@@ -288,23 +264,48 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
     );
   }
 
-  Widget _buildTableHeaderCell(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      child: Text(
-        text,
-        style: const TextStyle(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.bold, fontSize: 11),
-      ),
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 
-  Widget _buildTableCell(String text, {Color? textColor, bool isBold = false}) {
+  Widget _buildTableHeaderCell(String text, FinancialPalette colors) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Text(
         text,
         style: TextStyle(
-          color: textColor ?? AppColors.onSurface,
+          color: colors.onSurface,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableCell(String text, FinancialPalette colors, {Color? textColor, bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor ?? colors.onSurface,
           fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
           fontSize: 11,
           fontFamily: 'monospace',
@@ -321,6 +322,7 @@ class _WealthChartPainter extends CustomPainter {
   final int currentAge;
   final int targetAge;
   final int? hoveredIndex;
+  final FinancialPalette palette;
 
   _WealthChartPainter({
     required this.projection,
@@ -328,6 +330,7 @@ class _WealthChartPainter extends CustomPainter {
     required this.inflectionYear,
     required this.currentAge,
     required this.targetAge,
+    required this.palette,
     this.hoveredIndex,
   });
 
@@ -349,7 +352,7 @@ class _WealthChartPainter extends CustomPainter {
     maxVal *= 1.08;
 
     final gridPaint = Paint()
-      ..color = AppColors.outlineVariant
+      ..color = palette.chartGrid
       ..strokeWidth = 1.0;
 
     const int steps = 4;
@@ -363,7 +366,7 @@ class _WealthChartPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(color: AppColors.secondary, fontSize: 10, fontFamily: 'monospace'),
+          style: TextStyle(color: palette.secondary, fontSize: 10, fontFamily: 'monospace'),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -417,14 +420,14 @@ class _WealthChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppColors.primary.withValues(alpha: 0.18),
-          AppColors.primary.withValues(alpha: 0.0),
+          palette.primary.withValues(alpha: palette.isDark ? 0.18 : 0.12),
+          palette.primary.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(leftMargin, topMargin, plotWidth, plotHeight));
     canvas.drawPath(depositsFillPath, depositsFillPaint);
 
     final depositsStrokePaint = Paint()
-      ..color = AppColors.primary
+      ..color = palette.primary
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     canvas.drawPath(depositsPath, depositsStrokePaint);
@@ -434,14 +437,14 @@ class _WealthChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppColors.tertiary.withValues(alpha: 0.35),
-          AppColors.tertiary.withValues(alpha: 0.0),
+          palette.tertiary.withValues(alpha: palette.isDark ? 0.35 : 0.18),
+          palette.tertiary.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(leftMargin, topMargin, plotWidth, plotHeight));
     canvas.drawPath(wealthFillPath, wealthFillPaint);
 
     final wealthStrokePaint = Paint()
-      ..color = AppColors.tertiary
+      ..color = palette.tertiary
       ..strokeWidth = 3.2
       ..style = PaintingStyle.stroke;
     canvas.drawPath(wealthPath, wealthStrokePaint);
@@ -449,20 +452,20 @@ class _WealthChartPainter extends CustomPainter {
     // Milestones
     final startX = getX(0);
     final startY = getY(projection.first.totalWealth);
-    canvas.drawCircle(Offset(startX, startY), 4.5, Paint()..color = AppColors.tertiary);
+    canvas.drawCircle(Offset(startX, startY), 4.5, Paint()..color = palette.tertiary);
     _drawXLabel(canvas, '$currentAge anos', startX, size.height - bottomMargin + 6);
 
     final endX = getX(totalPoints - 1);
     final endY = getY(projection.last.totalWealth);
-    canvas.drawCircle(Offset(endX, endY), 8.0, Paint()..color = AppColors.tertiary.withValues(alpha: 0.3));
-    canvas.drawCircle(Offset(endX, endY), 5.0, Paint()..color = AppColors.tertiary);
+    canvas.drawCircle(Offset(endX, endY), 8.0, Paint()..color = palette.tertiary.withValues(alpha: 0.3));
+    canvas.drawCircle(Offset(endX, endY), 5.0, Paint()..color = palette.tertiary);
     _drawXLabel(canvas, '$targetAge anos', endX, size.height - bottomMargin + 6, isHighlight: true);
 
     final targetTagTp = TextPainter(
-      text: const TextSpan(
+      text: TextSpan(
         text: 'Meta 🎯',
         style: TextStyle(
-          color: AppColors.tertiary,
+          color: palette.tertiary,
           fontSize: 10,
           fontWeight: FontWeight.bold,
           fontFamily: 'monospace',
@@ -476,13 +479,13 @@ class _WealthChartPainter extends CustomPainter {
       final inflX = getX(inflectionYear!);
       final inflY = getY(projection[inflectionYear!].totalWealth);
 
-      canvas.drawCircle(Offset(inflX, inflY), 4.0, Paint()..color = AppColors.tertiary);
+      canvas.drawCircle(Offset(inflX, inflY), 4.0, Paint()..color = palette.tertiary);
 
       final inflTp = TextPainter(
-        text: const TextSpan(
+        text: TextSpan(
           text: 'Inflexão ⚡',
           style: TextStyle(
-            color: AppColors.tertiary,
+            color: palette.tertiary,
             fontSize: 9,
             fontWeight: FontWeight.bold,
           ),
@@ -504,13 +507,13 @@ class _WealthChartPainter extends CustomPainter {
         Offset(hX, topMargin),
         Offset(hX, topMargin + plotHeight),
         Paint()
-          ..color = AppColors.onSurface.withValues(alpha: 0.4)
+          ..color = palette.chartHoverLine
           ..strokeWidth = 1.0
           ..style = PaintingStyle.stroke,
       );
 
-      canvas.drawCircle(Offset(hX, hY), 6.0, Paint()..color = AppColors.onSurface);
-      canvas.drawCircle(Offset(hX, hY), 4.0, Paint()..color = AppColors.tertiary);
+      canvas.drawCircle(Offset(hX, hY), 6.0, Paint()..color = palette.onSurface);
+      canvas.drawCircle(Offset(hX, hY), 4.0, Paint()..color = palette.tertiary);
     }
   }
 
@@ -529,7 +532,7 @@ class _WealthChartPainter extends CustomPainter {
       text: TextSpan(
         text: text,
         style: TextStyle(
-          color: isHighlight ? AppColors.tertiary : AppColors.secondary,
+          color: isHighlight ? palette.tertiary : palette.secondary,
           fontSize: 10,
           fontWeight: isHighlight ? FontWeight.bold : FontWeight.normal,
         ),
@@ -553,6 +556,7 @@ class _WealthChartPainter extends CustomPainter {
   bool shouldRepaint(covariant _WealthChartPainter oldDelegate) {
     return oldDelegate.projection != projection ||
         oldDelegate.targetWealth != targetWealth ||
-        oldDelegate.hoveredIndex != hoveredIndex;
+        oldDelegate.hoveredIndex != hoveredIndex ||
+        oldDelegate.palette.isDark != palette.isDark;
   }
 }
