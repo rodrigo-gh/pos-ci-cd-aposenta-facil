@@ -11,7 +11,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AposentaFacilApp), findsOneWidget);
-    expect(find.text('Calcular Meu Futuro'), findsOneWidget);
-    expect(find.text('Seus Dados & Metas'), findsOneWidget);
+    expect(find.text('Parâmetros da Simulação'), findsOneWidget);
+    expect(find.text('Copiar Resumo'), findsOneWidget);
   });
 }

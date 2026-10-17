@@ -1,9 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import '../models/financial_plan.dart';
 import '../theme/app_theme.dart';
 
-class WealthEvolutionChart extends StatelessWidget {
+class WealthEvolutionChart extends StatefulWidget {
   final List<YearlyDataPoint> projection;
   final double targetWealth;
   final int? inflectionYear;
@@ -18,6 +19,15 @@ class WealthEvolutionChart extends StatelessWidget {
     required this.currentAge,
     required this.targetAge,
   });
+
+  @override
+  State<WealthEvolutionChart> createState() => _WealthEvolutionChartState();
+}
+
+class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
+  bool _showTable = false;
+  int? _hoveredIndex;
+  final NumberFormat _currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +51,7 @@ class WealthEvolutionChart extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Curva de Evolução Patrimonial',
+                    'Evolução Patrimonial ao Longo do Tempo',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.onSurface,
@@ -49,86 +59,256 @@ class WealthEvolutionChart extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Projeção exponencial: Aportes vs. Patrimônio Total',
+                    'Projeção de acumulação: valor aportado vs. rentabilidade de juros compostos',
                     style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
                   ),
                 ],
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+              // View toggle buttons (Gráfico vs Tabela)
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.outlineVariant),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildViewButton(
+                      icon: Icons.show_chart,
+                      label: 'Gráfico',
+                      isSelected: !_showTable,
+                      onTap: () => setState(() => _showTable = false),
+                    ),
+                    _buildViewButton(
+                      icon: Icons.table_chart_outlined,
+                      label: 'Tabela',
+                      isSelected: _showTable,
+                      onTap: () => setState(() => _showTable = true),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (!_showTable) ...[
+            // Legend
+            Wrap(
+              spacing: 16,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('Total Investido', style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12)),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppColors.tertiary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Patrimônio Líquido Acumulado',
+                      style: TextStyle(color: AppColors.tertiary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Canvas with MouseRegion for interactive hover
+            MouseRegion(
+              onHover: (event) {
+                final RenderBox? box = context.findRenderObject() as RenderBox?;
+                if (box != null && widget.projection.isNotEmpty) {
+                  const leftMargin = 55.0;
+                  final plotWidth = box.size.width - 40 - leftMargin;
+                  final localX = event.localPosition.dx - leftMargin;
+                  if (localX >= 0 && localX <= plotWidth && plotWidth > 0) {
+                    final index = ((localX / plotWidth) * (widget.projection.length - 1)).round();
+                    setState(() {
+                      _hoveredIndex = index.clamp(0, widget.projection.length - 1);
+                    });
+                  }
+                }
+              },
+              onExit: (_) => setState(() => _hoveredIndex = null),
+              child: Container(
+                height: 220,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLowest.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.fromLTRB(8, 20, 16, 8),
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: _WealthChartPainter(
+                    projection: widget.projection,
+                    targetWealth: widget.targetWealth,
+                    inflectionYear: widget.inflectionYear,
+                    currentAge: widget.currentAge,
+                    targetAge: widget.targetAge,
+                    hoveredIndex: _hoveredIndex,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_hoveredIndex != null && _hoveredIndex! < widget.projection.length)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.tertiary.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Aos ${widget.projection[_hoveredIndex!].age} anos ($_hoveredIndex anos de aportes):',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    Text(
+                      'Patrimônio: ${_currencyFormat.format(widget.projection[_hoveredIndex!].totalWealth)}  |  Renda mensal: ${_currencyFormat.format(widget.projection[_hoveredIndex!].monthlyPassiveIncome)}/mês',
+                      style: const TextStyle(color: AppColors.tertiary, fontWeight: FontWeight.bold, fontSize: 12, fontFamily: 'monospace'),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 12,
+                runSpacing: 4,
                 children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                  Text(
+                    'Ponto de Partida: ${_currencyFormat.format(widget.projection.isNotEmpty ? widget.projection.first.totalWealth : 0)}',
+                    style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontFamily: 'monospace'),
                   ),
-                  const SizedBox(width: 6),
                   const Text(
-                    'Total Aportado',
-                    style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
-                  ),
-                  const SizedBox(width: 16),
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: AppColors.tertiary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Patrimônio Líquido',
-                    style: TextStyle(
-                      color: AppColors.tertiary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'Passe o mouse na curva para inspecionar cada ano',
+                    style: TextStyle(color: AppColors.secondary, fontSize: 11),
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // Chart Canvas
-          Container(
-            height: 220,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.fromLTRB(8, 20, 16, 8),
-            child: CustomPaint(
-              size: Size.infinite,
-              painter: _WealthChartPainter(
-                projection: projection,
-                targetWealth: targetWealth,
-                inflectionYear: inflectionYear,
-                currentAge: currentAge,
-                targetAge: targetAge,
+          ] else ...[
+            // TABLE VIEW
+            SizedBox(
+              height: 280,
+              child: SingleChildScrollView(
+                child: Table(
+                  border: TableBorder(
+                    horizontalInside: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5), width: 1),
+                  ),
+                  columnWidths: const {
+                    0: FlexColumnWidth(1.2),
+                    1: FlexColumnWidth(2.0),
+                    2: FlexColumnWidth(2.2),
+                    3: FlexColumnWidth(2.0),
+                  },
+                  children: [
+                    TableRow(
+                      decoration: const BoxDecoration(color: AppColors.surfaceContainerHigh),
+                      children: [
+                        _buildTableHeaderCell('Idade'),
+                        _buildTableHeaderCell('Total Investido'),
+                        _buildTableHeaderCell('Patrimônio Total'),
+                        _buildTableHeaderCell('Renda Passiva/Mês'),
+                      ],
+                    ),
+                    for (final point in widget.projection)
+                      TableRow(
+                        children: [
+                          _buildTableCell('${point.age} anos (${point.yearOffset}º ano)', isBold: point.yearOffset == widget.inflectionYear),
+                          _buildTableCell(_currencyFormat.format(point.totalDeposited)),
+                          _buildTableCell(_currencyFormat.format(point.totalWealth), textColor: AppColors.tertiary, isBold: true),
+                          _buildTableCell(_currencyFormat.format(point.monthlyPassiveIncome)),
+                        ],
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            spacing: 12,
-            runSpacing: 4,
-            children: [
-              Text(
-                'Ponto de Partida: R\$ ${(projection.isNotEmpty ? projection.first.totalWealth : 0).toStringAsFixed(2)}',
-                style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontFamily: 'monospace'),
-              ),
-              const Text(
-                'Juros compostos acelerando o topo da curva',
-                style: TextStyle(color: AppColors.tertiary, fontSize: 11, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildViewButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.surfaceContainerHigh : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isSelected ? AppColors.onSurface : AppColors.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? AppColors.onSurface : AppColors.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableHeaderCell(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Text(
+        text,
+        style: const TextStyle(color: AppColors.onSurfaceVariant, fontWeight: FontWeight.bold, fontSize: 11),
+      ),
+    );
+  }
+
+  Widget _buildTableCell(String text, {Color? textColor, bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor ?? AppColors.onSurface,
+          fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          fontSize: 11,
+          fontFamily: 'monospace',
+        ),
       ),
     );
   }
@@ -140,6 +320,7 @@ class _WealthChartPainter extends CustomPainter {
   final int? inflectionYear;
   final int currentAge;
   final int targetAge;
+  final int? hoveredIndex;
 
   _WealthChartPainter({
     required this.projection,
@@ -147,6 +328,7 @@ class _WealthChartPainter extends CustomPainter {
     required this.inflectionYear,
     required this.currentAge,
     required this.targetAge,
+    this.hoveredIndex,
   });
 
   @override
@@ -164,9 +346,8 @@ class _WealthChartPainter extends CustomPainter {
       if (p.totalWealth > maxVal) maxVal = p.totalWealth;
       if (p.totalDeposited > maxVal) maxVal = p.totalDeposited;
     }
-    maxVal *= 1.08; // small headroom
+    maxVal *= 1.08;
 
-    // Draw horizontal dashed grid lines & Y labels
     final gridPaint = Paint()
       ..color = AppColors.outlineVariant
       ..strokeWidth = 1.0;
@@ -189,7 +370,6 @@ class _WealthChartPainter extends CustomPainter {
       tp.paint(canvas, Offset(leftMargin - tp.width - 8, y - tp.height / 2));
     }
 
-    // Build Paths for Deposits and Wealth
     final depositsPath = Path();
     final depositsFillPath = Path();
     final wealthPath = Path();
@@ -199,7 +379,6 @@ class _WealthChartPainter extends CustomPainter {
     double getX(int index) => leftMargin + (plotWidth * index / (totalPoints - 1));
     double getY(double val) => topMargin + plotHeight * (1.0 - (val / maxVal).clamp(0.0, 1.0));
 
-    // Deposits path
     for (int i = 0; i < totalPoints; i++) {
       final double x = getX(i);
       final double y = getY(projection[i].totalDeposited);
@@ -215,7 +394,6 @@ class _WealthChartPainter extends CustomPainter {
     depositsFillPath.lineTo(getX(totalPoints - 1), topMargin + plotHeight);
     depositsFillPath.close();
 
-    // Wealth path (smooth quadratic / cubic)
     for (int i = 0; i < totalPoints; i++) {
       final double x = getX(i);
       final double y = getY(projection[i].totalWealth);
@@ -234,7 +412,6 @@ class _WealthChartPainter extends CustomPainter {
     wealthFillPath.lineTo(getX(totalPoints - 1), topMargin + plotHeight);
     wealthFillPath.close();
 
-    // Fill Deposits
     final depositsFillPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -246,14 +423,12 @@ class _WealthChartPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(leftMargin, topMargin, plotWidth, plotHeight));
     canvas.drawPath(depositsFillPath, depositsFillPaint);
 
-    // Stroke Deposits
     final depositsStrokePaint = Paint()
       ..color = AppColors.primary
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     canvas.drawPath(depositsPath, depositsStrokePaint);
 
-    // Fill Wealth
     final wealthFillPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
@@ -265,28 +440,24 @@ class _WealthChartPainter extends CustomPainter {
       ).createShader(Rect.fromLTWH(leftMargin, topMargin, plotWidth, plotHeight));
     canvas.drawPath(wealthFillPath, wealthFillPaint);
 
-    // Stroke Wealth
     final wealthStrokePaint = Paint()
       ..color = AppColors.tertiary
       ..strokeWidth = 3.2
       ..style = PaintingStyle.stroke;
     canvas.drawPath(wealthPath, wealthStrokePaint);
 
-    // Milestone: Start Dot
+    // Milestones
     final startX = getX(0);
     final startY = getY(projection.first.totalWealth);
     canvas.drawCircle(Offset(startX, startY), 4.5, Paint()..color = AppColors.tertiary);
     _drawXLabel(canvas, '$currentAge anos', startX, size.height - bottomMargin + 6);
 
-    // Milestone: End / Target Dot
     final endX = getX(totalPoints - 1);
     final endY = getY(projection.last.totalWealth);
-    // Outer halo
     canvas.drawCircle(Offset(endX, endY), 8.0, Paint()..color = AppColors.tertiary.withValues(alpha: 0.3));
     canvas.drawCircle(Offset(endX, endY), 5.0, Paint()..color = AppColors.tertiary);
     _drawXLabel(canvas, '$targetAge anos', endX, size.height - bottomMargin + 6, isHighlight: true);
 
-    // Tag above target dot
     final targetTagTp = TextPainter(
       text: const TextSpan(
         text: 'Meta 🎯',
@@ -301,7 +472,6 @@ class _WealthChartPainter extends CustomPainter {
     )..layout();
     targetTagTp.paint(canvas, Offset(endX - targetTagTp.width, math.max(0, endY - 18)));
 
-    // Milestone: Inflection Dot (if any)
     if (inflectionYear != null && inflectionYear! > 0 && inflectionYear! < totalPoints) {
       final inflX = getX(inflectionYear!);
       final inflY = getY(projection[inflectionYear!].totalWealth);
@@ -323,6 +493,24 @@ class _WealthChartPainter extends CustomPainter {
 
       final inflAge = currentAge + inflectionYear!;
       _drawXLabel(canvas, '$inflAge anos', inflX, size.height - bottomMargin + 6);
+    }
+
+    // Hover indicator line & dot
+    if (hoveredIndex != null && hoveredIndex! >= 0 && hoveredIndex! < totalPoints) {
+      final hX = getX(hoveredIndex!);
+      final hY = getY(projection[hoveredIndex!].totalWealth);
+
+      canvas.drawLine(
+        Offset(hX, topMargin),
+        Offset(hX, topMargin + plotHeight),
+        Paint()
+          ..color = AppColors.onSurface.withValues(alpha: 0.4)
+          ..strokeWidth = 1.0
+          ..style = PaintingStyle.stroke,
+      );
+
+      canvas.drawCircle(Offset(hX, hY), 6.0, Paint()..color = AppColors.onSurface);
+      canvas.drawCircle(Offset(hX, hY), 4.0, Paint()..color = AppColors.tertiary);
     }
   }
 
@@ -363,6 +551,8 @@ class _WealthChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _WealthChartPainter oldDelegate) {
-    return oldDelegate.projection != projection || oldDelegate.targetWealth != targetWealth;
+    return oldDelegate.projection != projection ||
+        oldDelegate.targetWealth != targetWealth ||
+        oldDelegate.hoveredIndex != hoveredIndex;
   }
 }

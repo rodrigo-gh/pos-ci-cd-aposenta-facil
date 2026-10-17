@@ -38,12 +38,16 @@ class YearlyDataPoint {
   final int yearOffset;
   final double totalDeposited;
   final double totalWealth;
+  final double interestInYear;
+  final double monthlyPassiveIncome;
 
   const YearlyDataPoint({
     required this.age,
     required this.yearOffset,
     required this.totalDeposited,
     required this.totalWealth,
+    this.interestInYear = 0.0,
+    this.monthlyPassiveIncome = 0.0,
   });
 }
 

@@ -49,22 +49,30 @@ class FinancialCalculator {
     for (int y = 0; y <= totalYears; y++) {
       final int currentAge = input.currentAge + y;
       final double totalDepositsAtYear = initialWealth + (monthlyContribution * y * 12);
+      final double monthlyPassive = currentAccumulated * safeRate;
+
+      // Mede os juros gerados ao longo dos próximos 12 meses
+      double accumulatedNextYear = currentAccumulated;
+      for (int m = 0; m < 12; m++) {
+        final double monthlyInterestGenerated = accumulatedNextYear * safeRate;
+        if (inflectionYear == null && y > 0 && monthlyInterestGenerated >= monthlyContribution && monthlyContribution > 0) {
+          inflectionYear = y;
+        }
+        accumulatedNextYear = (accumulatedNextYear + monthlyContribution) * (1.0 + safeRate);
+      }
+
+      final double interestInYear = math.max(0.0, (accumulatedNextYear - currentAccumulated) - (monthlyContribution * 12));
 
       projection.add(YearlyDataPoint(
         age: currentAge,
         yearOffset: y,
         totalDeposited: totalDepositsAtYear,
         totalWealth: currentAccumulated,
+        interestInYear: interestInYear,
+        monthlyPassiveIncome: monthlyPassive,
       ));
 
-      // Simula os próximos 12 meses para o próximo ano
-      for (int m = 0; m < 12; m++) {
-        final double monthlyInterestGenerated = currentAccumulated * safeRate;
-        if (inflectionYear == null && y > 0 && monthlyInterestGenerated >= monthlyContribution && monthlyContribution > 0) {
-          inflectionYear = y;
-        }
-        currentAccumulated = (currentAccumulated + monthlyContribution) * (1.0 + safeRate);
-      }
+      currentAccumulated = accumulatedNextYear;
     }
 
     return FinancialResult(
