@@ -295,8 +295,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 48.0 : 16.0,
-                vertical: 24.0,
+                horizontal: screenWidth < 400 ? 12.0 : (isDesktop ? 48.0 : 16.0),
+                vertical: isDesktop ? 24.0 : 16.0,
               ),
               child: Center(
                 child: ConstrainedBox(
@@ -416,13 +416,14 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   Widget _buildHeroTitle(bool isDesktop, FinancialPalette colors) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
           text: TextSpan(
             style: TextStyle(
-              fontSize: isDesktop ? 32 : 24,
+              fontSize: isDesktop ? 32 : (screenWidth < 400 ? 21 : 24),
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
               color: colors.onSurface,

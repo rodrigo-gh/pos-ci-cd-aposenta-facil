@@ -42,8 +42,10 @@ class FooterBar extends StatelessWidget {
               ],
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               InkWell(
                 onTap: () => MethodologyDialog.show(context),
@@ -56,7 +58,6 @@ class FooterBar extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
               Text(
                 'GitHub: ${AppConstants.githubRepo}',
                 style: TextStyle(

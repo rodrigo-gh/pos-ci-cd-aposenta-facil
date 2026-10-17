@@ -39,7 +39,7 @@ class HeroResultCard extends StatelessWidget {
         border: Border.all(color: colors.outlineVariant),
         boxShadow: colors.cardShadow,
       ),
-      padding: const EdgeInsets.all(28),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 18 : 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -58,8 +58,11 @@ class HeroResultCard extends StatelessWidget {
   }
 
   Widget _buildHeaderBadge(FinancialPalette colors) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 6,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -119,14 +122,18 @@ class HeroResultCard extends StatelessWidget {
           spacing: 12,
           runSpacing: 8,
           children: [
-            Text(
-              CurrencyFormatter.format(0.0),
-              style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-                color: colors.onSurface,
-                letterSpacing: -1,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                CurrencyFormatter.format(0.0),
+                style: TextStyle(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                  color: colors.onSurface,
+                  letterSpacing: -1,
+                ),
               ),
             ),
             Container(
@@ -202,15 +209,20 @@ class HeroResultCard extends StatelessWidget {
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 8,
+          runSpacing: 4,
           children: [
-            Text(
-              CurrencyFormatter.format(result.monthlyContribution),
-              style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-                color: colors.onSurface,
-                letterSpacing: -1,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                CurrencyFormatter.format(result.monthlyContribution),
+                style: TextStyle(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                  color: colors.onSurface,
+                  letterSpacing: -1,
+                ),
               ),
             ),
             Text(

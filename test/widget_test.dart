@@ -75,4 +75,46 @@ void main() {
     // O resultado DEVE ser rigorosamente idêntico: R$ 1.111.111,11
     expect(find.textContaining('1.111.111,11'), findsWidgets);
   });
+
+  testWidgets('Renderiza perfeitamente no mobile (360x780) sem nenhum overflow de layout', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const AposentaFacilApp());
+    await tester.pumpAndSettle();
+
+    // No mobile, o HeaderBar deve exibir o botão de cópia adaptado ('Copiar') e ícone de metodologia
+    expect(find.text('Copiar'), findsOneWidget);
+    expect(find.byIcon(Icons.help_outline), findsOneWidget);
+
+    // Abre o diálogo de Metodologia em tela pequena
+    await tester.tap(find.byIcon(Icons.help_outline));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Premissas e Metodologia Financeira'), findsOneWidget);
+    expect(find.text('Entendido'), findsOneWidget);
+
+    // Fecha o diálogo
+    await tester.tap(find.text('Entendido'));
+    await tester.pumpAndSettle();
+
+    // Rola a página até encontrar o seletor do gráfico/tabela
+    await tester.scrollUntilVisible(
+      find.text('Tabela'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    // Alterna para o modo tabela no gráfico para validar scroll horizontal
+    expect(find.text('Tabela'), findsOneWidget);
+    await tester.tap(find.text('Tabela'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Renda Passiva/Mês'), findsOneWidget);
+  });
 }

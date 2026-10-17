@@ -27,7 +27,7 @@ class CompoundBreakdownBar extends StatelessWidget {
         border: Border.all(color: colors.outlineVariant),
         boxShadow: colors.cardShadow,
       ),
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 14 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -42,12 +42,14 @@ class CompoundBreakdownBar extends StatelessWidget {
                 children: [
                   Icon(Icons.all_inclusive, color: colors.tertiary, size: 20),
                   const SizedBox(width: 8),
-                  Text(
-                    'O Poder dos Juros Compostos',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.onSurface,
-                        ),
+                  Flexible(
+                    child: Text(
+                      'O Poder dos Juros Compostos',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
+                    ),
                   ),
                 ],
               ),
@@ -100,7 +102,7 @@ class CompoundBreakdownBar extends StatelessWidget {
           // Legends and Values
           Wrap(
             spacing: 24,
-            runSpacing: 12,
+            runSpacing: 16,
             children: [
               // Bolso
               Row(
@@ -116,50 +118,58 @@ class CompoundBreakdownBar extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Aporte do seu bolso',
-                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: colors.surfaceContainerHigh,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: colors.outlineVariant),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width < 600
+                          ? MediaQuery.of(context).size.width - 80
+                          : 320,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
+                          children: [
+                            Text(
+                              'Aporte do seu bolso',
+                              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
                             ),
-                            child: Text(
-                              '$depositPercent%',
-                              style: TextStyle(
-                                color: colors.primary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colors.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: colors.outlineVariant),
+                              ),
+                              child: Text(
+                                '$depositPercent%',
+                                style: TextStyle(
+                                  color: colors.primary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        CurrencyFormatter.format(totalDeposited),
-                        style: TextStyle(
-                          color: colors.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
+                          ],
                         ),
-                      ),
-                      Text(
-                        'Inicial + aportes somados',
-                        style: TextStyle(color: colors.secondary, fontSize: 11),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          CurrencyFormatter.format(totalDeposited),
+                          style: TextStyle(
+                            color: colors.onSurface,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        Text(
+                          'Inicial + aportes somados',
+                          style: TextStyle(color: colors.secondary, fontSize: 11),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -177,49 +187,58 @@ class CompoundBreakdownBar extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Juros acumulados',
-                            style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: colors.tertiaryContainer,
-                              borderRadius: BorderRadius.circular(4),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width < 600
+                          ? MediaQuery.of(context).size.width - 80
+                          : 320,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
+                          children: [
+                            Text(
+                              'Juros acumulados',
+                              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
                             ),
-                            child: Text(
-                              '$interestPercent%',
-                              style: TextStyle(
-                                color: colors.onTertiaryContainer,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colors.tertiaryContainer,
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: colors.outlineVariant),
+                              ),
+                              child: Text(
+                                '$interestPercent%',
+                                style: TextStyle(
+                                  color: colors.onTertiaryContainer,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        CurrencyFormatter.format(totalInterest),
-                        style: TextStyle(
-                          color: colors.tertiary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
+                          ],
                         ),
-                      ),
-                      Text(
-                        'Lucro exponencial gerado pelo tempo',
-                        style: TextStyle(color: colors.secondary, fontSize: 11),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          CurrencyFormatter.format(totalInterest),
+                          style: TextStyle(
+                            color: colors.tertiary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        Text(
+                          'Lucro exponencial gerado pelo tempo',
+                          style: TextStyle(color: colors.secondary, fontSize: 11),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -67,26 +67,33 @@ class SimulationForm extends StatelessWidget {
         border: Border.all(color: colors.outlineVariant),
         boxShadow: colors.cardShadow,
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.tune, color: colors.tertiary, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Parâmetros da Simulação',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colors.onSurface,
-                        ),
-                  ),
-                ],
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.tune, color: colors.tertiary, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Parâmetros da Simulação',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
+                    ),
+                  ],
+                ),
               ),
               Text(
                 'CÁLCULO DINÂMICO',

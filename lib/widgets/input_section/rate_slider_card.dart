@@ -25,8 +25,11 @@ class RateSliderCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 4,
           children: [
             Text(
               'Taxa Real de Retorno Estimada',
@@ -117,7 +120,7 @@ class RateSliderCard extends StatelessWidget {
       onTap: () => onPresetSelected(presetKey, rate),
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: isSelected ? colors.surfaceContainerHigh : colors.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(8),
@@ -127,6 +130,9 @@ class RateSliderCard extends StatelessWidget {
           children: [
             Text(
               title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -136,6 +142,9 @@ class RateSliderCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitle,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 9,
                 fontFamily: 'monospace',

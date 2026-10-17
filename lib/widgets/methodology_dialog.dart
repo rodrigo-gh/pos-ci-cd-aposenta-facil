@@ -22,12 +22,14 @@ class MethodologyDialog extends StatelessWidget {
         children: [
           Icon(Icons.info_outline, color: colors.tertiary),
           const SizedBox(width: 10),
-          Text(
-            'Premissas e Metodologia Financeira',
-            style: TextStyle(
-              fontSize: 16,
-              color: colors.onSurface,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              'Premissas e Metodologia Financeira',
+              style: TextStyle(
+                fontSize: 16,
+                color: colors.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
