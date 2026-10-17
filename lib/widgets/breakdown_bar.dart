@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
+import '../utils/currency_formatter.dart';
 
 class CompoundBreakdownBar extends StatelessWidget {
   final double totalDeposited;
@@ -19,7 +19,6 @@ class CompoundBreakdownBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final currencyFormatter = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Container(
       decoration: BoxDecoration(
@@ -148,7 +147,7 @@ class CompoundBreakdownBar extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        currencyFormatter.format(totalDeposited),
+                        CurrencyFormatter.format(totalDeposited),
                         style: TextStyle(
                           color: colors.onSurface,
                           fontSize: 16,
@@ -208,7 +207,7 @@ class CompoundBreakdownBar extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        currencyFormatter.format(totalInterest),
+                        CurrencyFormatter.format(totalInterest),
                         style: TextStyle(
                           color: colors.tertiary,
                           fontSize: 16,

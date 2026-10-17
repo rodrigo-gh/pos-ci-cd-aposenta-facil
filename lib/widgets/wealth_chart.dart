@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 import '../models/financial_plan.dart';
 import '../theme/app_theme.dart';
+import '../utils/currency_formatter.dart';
 
 class WealthEvolutionChart extends StatefulWidget {
   final List<YearlyDataPoint> projection;
@@ -27,7 +27,6 @@ class WealthEvolutionChart extends StatefulWidget {
 class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
   bool _showTable = false;
   int? _hoveredIndex;
-  final NumberFormat _currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +157,7 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: colors.onSurface),
                     ),
                     Text(
-                      'Patrimônio: ${_currencyFormat.format(widget.projection[_hoveredIndex!].totalWealth)}  |  Renda mensal: ${_currencyFormat.format(widget.projection[_hoveredIndex!].monthlyPassiveIncome)}/mês',
+                      'Patrimônio: ${CurrencyFormatter.format(widget.projection[_hoveredIndex!].totalWealth)}  |  Renda mensal: ${CurrencyFormatter.format(widget.projection[_hoveredIndex!].monthlyPassiveIncome)}/mês',
                       style: TextStyle(color: colors.tertiary, fontWeight: FontWeight.bold, fontSize: 12, fontFamily: 'monospace'),
                     ),
                   ],
@@ -171,7 +170,7 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
                 runSpacing: 4,
                 children: [
                   Text(
-                    'Ponto de Partida: ${_currencyFormat.format(widget.projection.isNotEmpty ? widget.projection.first.totalWealth : 0)}',
+                    'Ponto de Partida: ${CurrencyFormatter.format(widget.projection.isNotEmpty ? widget.projection.first.totalWealth : 0)}',
                     style: TextStyle(color: colors.secondary, fontSize: 11, fontFamily: 'monospace'),
                   ),
                   Text(
@@ -209,9 +208,9 @@ class _WealthEvolutionChartState extends State<WealthEvolutionChart> {
                       TableRow(
                         children: [
                           _buildTableCell('${point.age} anos (${point.yearOffset}º ano)', colors, isBold: point.yearOffset == widget.inflectionYear),
-                          _buildTableCell(_currencyFormat.format(point.totalDeposited), colors),
-                          _buildTableCell(_currencyFormat.format(point.totalWealth), colors, textColor: colors.tertiary, isBold: true),
-                          _buildTableCell(_currencyFormat.format(point.monthlyPassiveIncome), colors),
+                          _buildTableCell(CurrencyFormatter.format(point.totalDeposited), colors),
+                          _buildTableCell(CurrencyFormatter.format(point.totalWealth), colors, textColor: colors.tertiary, isBold: true),
+                          _buildTableCell(CurrencyFormatter.format(point.monthlyPassiveIncome), colors),
                         ],
                       ),
                   ],
@@ -362,7 +361,7 @@ class _WealthChartPainter extends CustomPainter {
 
       _drawDashedLine(canvas, Offset(leftMargin, y), Offset(size.width, y), gridPaint);
 
-      final label = _formatShortCurrency(val);
+      final label = CurrencyFormatter.formatShort(val);
       final tp = TextPainter(
         text: TextSpan(
           text: label,
@@ -540,16 +539,6 @@ class _WealthChartPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(canvas, Offset(x - tp.width / 2, y));
-  }
-
-  String _formatShortCurrency(double value) {
-    if (value >= 1000000) {
-      return 'R\$ ${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return 'R\$ ${(value / 1000).toStringAsFixed(0)}k';
-    } else {
-      return 'R\$ ${value.toStringAsFixed(0)}';
-    }
   }
 
   @override
