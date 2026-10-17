@@ -9,6 +9,8 @@ import 'rate_slider_card.dart';
 class SimulationForm extends StatelessWidget {
   final TextEditingController currentAgeController;
   final TextEditingController targetAgeController;
+  final FocusNode? currentAgeFocusNode;
+  final FocusNode? targetAgeFocusNode;
   final TextEditingController desiredIncomeController;
   final TextEditingController initialWealthController;
   final bool hasInitialWealth;
@@ -16,6 +18,7 @@ class SimulationForm extends StatelessWidget {
   final String selectedPreset;
   final VoidCallback onCalculate;
   final void Function(int delta, TextEditingController controller) onAdjustAge;
+  final VoidCallback? onAgeEditingComplete;
   final ValueChanged<bool> onToggleInitialWealth;
   final ValueChanged<double> onSelectIncome;
   final ValueChanged<double> onSelectInitialWealth;
@@ -27,6 +30,8 @@ class SimulationForm extends StatelessWidget {
     super.key,
     required this.currentAgeController,
     required this.targetAgeController,
+    this.currentAgeFocusNode,
+    this.targetAgeFocusNode,
     required this.desiredIncomeController,
     required this.initialWealthController,
     required this.hasInitialWealth,
@@ -34,6 +39,7 @@ class SimulationForm extends StatelessWidget {
     required this.selectedPreset,
     required this.onCalculate,
     required this.onAdjustAge,
+    this.onAgeEditingComplete,
     required this.onToggleInitialWealth,
     required this.onSelectIncome,
     required this.onSelectInitialWealth,
@@ -93,9 +99,11 @@ class SimulationForm extends StatelessWidget {
                 child: AgeStepperCard(
                   label: 'Idade Atual',
                   controller: currentAgeController,
+                  focusNode: currentAgeFocusNode,
                   onDecrease: () => onAdjustAge(-1, currentAgeController),
                   onIncrease: () => onAdjustAge(1, currentAgeController),
                   onChanged: onCalculate,
+                  onEditingComplete: onAgeEditingComplete,
                 ),
               ),
               const SizedBox(width: 14),
@@ -103,9 +111,11 @@ class SimulationForm extends StatelessWidget {
                 child: AgeStepperCard(
                   label: 'Idade Aposentadoria',
                   controller: targetAgeController,
+                  focusNode: targetAgeFocusNode,
                   onDecrease: () => onAdjustAge(-1, targetAgeController),
                   onIncrease: () => onAdjustAge(1, targetAgeController),
                   onChanged: onCalculate,
+                  onEditingComplete: onAgeEditingComplete,
                 ),
               ),
             ],

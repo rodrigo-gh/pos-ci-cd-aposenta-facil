@@ -5,17 +5,21 @@ import '../../theme/app_theme.dart';
 class AgeStepperCard extends StatelessWidget {
   final String label;
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final VoidCallback onDecrease;
   final VoidCallback onIncrease;
   final VoidCallback onChanged;
+  final VoidCallback? onEditingComplete;
 
   const AgeStepperCard({
     super.key,
     required this.label,
     required this.controller,
+    this.focusNode,
     required this.onDecrease,
     required this.onIncrease,
     required this.onChanged,
+    this.onEditingComplete,
   });
 
   @override
@@ -47,10 +51,12 @@ class AgeStepperCard extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
+                  focusNode: focusNode,
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: (_) => onChanged(),
+                  onEditingComplete: onEditingComplete,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'constants/app_constants.dart';
@@ -70,6 +71,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   final TextEditingController _initialWealthController =
       TextEditingController(text: CurrencyFormatter.formatDecimal(AppConstants.defaultInitialWealth));
 
+  final FocusNode _currentAgeFocus = FocusNode();
+  final FocusNode _targetAgeFocus = FocusNode();
+
   bool _hasInitialWealth = true;
   double _monthlyRate = AppConstants.defaultMonthlyRate;
   String _selectedPreset = 'moderado';
@@ -79,11 +83,24 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   @override
   void initState() {
     super.initState();
+    // Valida e formata os campos de idade quando o usuário conclui a digitação (perda de foco)
+    _currentAgeFocus.addListener(() {
+      if (!_currentAgeFocus.hasFocus) {
+        _validateAndNormalizeAges();
+      }
+    });
+    _targetAgeFocus.addListener(() {
+      if (!_targetAgeFocus.hasFocus) {
+        _validateAndNormalizeAges();
+      }
+    });
     _calculate();
   }
 
   @override
   void dispose() {
+    _currentAgeFocus.dispose();
+    _targetAgeFocus.dispose();
     _currentAgeController.dispose();
     _targetAgeController.dispose();
     _desiredIncomeController.dispose();
@@ -91,14 +108,37 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     super.dispose();
   }
 
-  void _calculate() {
-    final currentAge = int.tryParse(_currentAgeController.text) ?? AppConstants.defaultCurrentAge;
-    int targetAge = int.tryParse(_targetAgeController.text) ?? AppConstants.defaultTargetAge;
+  /// Valida e normaliza as idades somente após o usuário terminar de digitar (perda de foco ou submissão)
+  void _validateAndNormalizeAges() {
+    int cur = int.tryParse(_currentAgeController.text) ?? AppConstants.defaultCurrentAge;
+    int tgt = int.tryParse(_targetAgeController.text) ?? AppConstants.defaultTargetAge;
 
-    if (targetAge <= currentAge) {
-      targetAge = currentAge + 1;
-      _targetAgeController.text = targetAge.toString();
+    cur = cur.clamp(AppConstants.minAge, AppConstants.maxAge);
+    if (tgt <= cur) {
+      tgt = (cur + 1).clamp(AppConstants.minAge, AppConstants.maxAge);
+    } else {
+      tgt = tgt.clamp(AppConstants.minAge, AppConstants.maxAge);
     }
+
+    if (_currentAgeController.text != cur.toString()) {
+      _currentAgeController.text = cur.toString();
+    }
+    if (_targetAgeController.text != tgt.toString()) {
+      _targetAgeController.text = tgt.toString();
+    }
+    _calculate();
+  }
+
+  /// Realiza o cálculo dinâmico sem sobrescrever o texto que o usuário está digitando ativamente
+  void _calculate() {
+    final curParsed = int.tryParse(_currentAgeController.text);
+    final tgtParsed = int.tryParse(_targetAgeController.text);
+
+    final currentAge = curParsed ?? AppConstants.defaultCurrentAge;
+    // Durante a digitação, usa um targetAge seguro para cálculo sem alterar o controller.text
+    final targetAge = (tgtParsed != null && tgtParsed > currentAge)
+        ? tgtParsed
+        : math.max(currentAge + 1, AppConstants.defaultTargetAge);
 
     final desiredIncome = CurrencyFormatter.parse(_desiredIncomeController.text);
     final initialWealth = _hasInitialWealth
@@ -119,8 +159,20 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   void _adjustAge(int delta, TextEditingController controller) {
-    final current = int.tryParse(controller.text) ?? AppConstants.defaultCurrentAge;
-    final next = (current + delta).clamp(AppConstants.minAge, AppConstants.maxAge);
+    final isTarget = controller == _targetAgeController;
+    final currentAge = int.tryParse(_currentAgeController.text) ?? AppConstants.defaultCurrentAge;
+    final currentVal = int.tryParse(controller.text) ?? (isTarget ? AppConstants.defaultTargetAge : currentAge);
+
+    int next = currentVal + delta;
+    if (isTarget) {
+      next = next.clamp(currentAge + 1, AppConstants.maxAge);
+    } else {
+      next = next.clamp(AppConstants.minAge, AppConstants.maxAge);
+      final currentTarget = int.tryParse(_targetAgeController.text) ?? AppConstants.defaultTargetAge;
+      if (currentTarget <= next) {
+        _targetAgeController.text = (next + 1).clamp(AppConstants.minAge, AppConstants.maxAge).toString();
+      }
+    }
     controller.text = next.toString();
     _calculate();
   }
@@ -234,6 +286,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                               child: SimulationForm(
                                 currentAgeController: _currentAgeController,
                                 targetAgeController: _targetAgeController,
+                                currentAgeFocusNode: _currentAgeFocus,
+                                targetAgeFocusNode: _targetAgeFocus,
                                 desiredIncomeController: _desiredIncomeController,
                                 initialWealthController: _initialWealthController,
                                 hasInitialWealth: _hasInitialWealth,
@@ -241,6 +295,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                 selectedPreset: _selectedPreset,
                                 onCalculate: _calculate,
                                 onAdjustAge: (delta, ctrl) => _adjustAge(delta, ctrl),
+                                onAgeEditingComplete: _validateAndNormalizeAges,
                                 onToggleInitialWealth: (val) {
                                   setState(() => _hasInitialWealth = val);
                                   _calculate();
@@ -275,6 +330,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         SimulationForm(
                           currentAgeController: _currentAgeController,
                           targetAgeController: _targetAgeController,
+                          currentAgeFocusNode: _currentAgeFocus,
+                          targetAgeFocusNode: _targetAgeFocus,
                           desiredIncomeController: _desiredIncomeController,
                           initialWealthController: _initialWealthController,
                           hasInitialWealth: _hasInitialWealth,
@@ -282,6 +339,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                           selectedPreset: _selectedPreset,
                           onCalculate: _calculate,
                           onAdjustAge: (delta, ctrl) => _adjustAge(delta, ctrl),
+                          onAgeEditingComplete: _validateAndNormalizeAges,
                           onToggleInitialWealth: (val) {
                             setState(() => _hasInitialWealth = val);
                             _calculate();
