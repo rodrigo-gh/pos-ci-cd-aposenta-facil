@@ -48,4 +48,31 @@ void main() {
     expect(find.widgetWithText(TextField, '68'), findsOneWidget);
     expect(find.text('Meta aos 68 anos'), findsOneWidget);
   });
+
+  testWidgets('Preenchimento com 5000 ou 5000,00 gera o mesmo resultado de cálculo financeiro', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const AposentaFacilApp());
+    await tester.pumpAndSettle();
+
+    // Localiza o campo de renda desejada (valor inicial padrão '10.000,00')
+    final incomeFinder = find.widgetWithText(TextField, '10.000,00');
+    expect(incomeFinder, findsOneWidget);
+
+    // Digita '5000'
+    await tester.enterText(incomeFinder, '5000');
+    await tester.pumpAndSettle();
+
+    // Verifica que o patrimônio alvo calculado com 5000 a 0.45% a.m. é R$ 1.111.111,11
+    expect(find.textContaining('1.111.111,11'), findsWidgets);
+
+    // Agora digita '5000,00'
+    final updatedIncomeFinder = find.widgetWithText(TextField, '5000');
+    await tester.enterText(updatedIncomeFinder, '5000,00');
+    await tester.pumpAndSettle();
+
+    // O resultado DEVE ser rigorosamente idêntico: R$ 1.111.111,11
+    expect(find.textContaining('1.111.111,11'), findsWidgets);
+  });
 }

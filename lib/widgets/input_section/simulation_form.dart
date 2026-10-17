@@ -13,12 +13,16 @@ class SimulationForm extends StatelessWidget {
   final FocusNode? targetAgeFocusNode;
   final TextEditingController desiredIncomeController;
   final TextEditingController initialWealthController;
+  final FocusNode? desiredIncomeFocusNode;
+  final FocusNode? initialWealthFocusNode;
   final bool hasInitialWealth;
   final double monthlyRate;
   final String selectedPreset;
   final VoidCallback onCalculate;
   final void Function(int delta, TextEditingController controller) onAdjustAge;
   final VoidCallback? onAgeEditingComplete;
+  final VoidCallback? onDesiredIncomeEditingComplete;
+  final VoidCallback? onInitialWealthEditingComplete;
   final ValueChanged<bool> onToggleInitialWealth;
   final ValueChanged<double> onSelectIncome;
   final ValueChanged<double> onSelectInitialWealth;
@@ -34,12 +38,16 @@ class SimulationForm extends StatelessWidget {
     this.targetAgeFocusNode,
     required this.desiredIncomeController,
     required this.initialWealthController,
+    this.desiredIncomeFocusNode,
+    this.initialWealthFocusNode,
     required this.hasInitialWealth,
     required this.monthlyRate,
     required this.selectedPreset,
     required this.onCalculate,
     required this.onAdjustAge,
     this.onAgeEditingComplete,
+    this.onDesiredIncomeEditingComplete,
+    this.onInitialWealthEditingComplete,
     required this.onToggleInitialWealth,
     required this.onSelectIncome,
     required this.onSelectInitialWealth,
@@ -125,8 +133,10 @@ class SimulationForm extends StatelessWidget {
           CurrencyInputField(
             label: 'Renda Mensal Desejada na Aposentadoria',
             controller: desiredIncomeController,
+            focusNode: desiredIncomeFocusNode,
             suffix: '/ mês',
             onChanged: (_) => onCalculate(),
+            onEditingComplete: onDesiredIncomeEditingComplete,
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -195,7 +205,9 @@ class SimulationForm extends StatelessWidget {
             CurrencyInputField(
               label: 'Patrimônio Inicial Atual',
               controller: initialWealthController,
+              focusNode: initialWealthFocusNode,
               onChanged: (_) => onCalculate(),
+              onEditingComplete: onInitialWealthEditingComplete,
             ),
             const SizedBox(height: 6),
             Wrap(

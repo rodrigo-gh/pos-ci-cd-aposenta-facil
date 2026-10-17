@@ -4,15 +4,19 @@ import '../../theme/app_theme.dart';
 class CurrencyInputField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final String? suffix;
   final ValueChanged<String> onChanged;
+  final VoidCallback? onEditingComplete;
 
   const CurrencyInputField({
     super.key,
     required this.label,
     required this.controller,
+    this.focusNode,
     this.suffix,
     required this.onChanged,
+    this.onEditingComplete,
   });
 
   @override
@@ -29,7 +33,10 @@ class CurrencyInputField extends StatelessWidget {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
+          focusNode: focusNode,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.done,
+          onEditingComplete: onEditingComplete,
           onChanged: onChanged,
           style: TextStyle(
             fontFamily: 'monospace',

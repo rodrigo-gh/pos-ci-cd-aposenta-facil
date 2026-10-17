@@ -1,8 +1,40 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:aposenta_facil/models/financial_plan.dart';
 import 'package:aposenta_facil/services/financial_calculator.dart';
+import 'package:aposenta_facil/utils/currency_formatter.dart';
 
 void main() {
+  group('CurrencyFormatter Parser Tests', () {
+    test('Diferença entre 5000 e 5000,00 é eliminada - ambos avaliam para 5000.0', () {
+      expect(CurrencyFormatter.parse('5000'), equals(5000.0));
+      expect(CurrencyFormatter.parse('5000,00'), equals(5000.0));
+      expect(CurrencyFormatter.parse('5.000'), equals(5000.0));
+      expect(CurrencyFormatter.parse('5.000,00'), equals(5000.0));
+      expect(CurrencyFormatter.parse('5000.00'), equals(5000.0));
+    });
+
+    test('Lida corretamente com centavos e decimais parciais', () {
+      expect(CurrencyFormatter.parse('5000,50'), equals(5000.50));
+      expect(CurrencyFormatter.parse('5000,5'), equals(5000.50));
+      expect(CurrencyFormatter.parse('5000,'), equals(5000.0));
+      expect(CurrencyFormatter.parse('5000.50'), equals(5000.50));
+      expect(CurrencyFormatter.parse('5000.5'), equals(5000.50));
+      expect(CurrencyFormatter.parse('5000.'), equals(5000.0));
+    });
+
+    test('Lida com prefixos monetários e grandes patrimônios', () {
+      expect(CurrencyFormatter.parse('R\$ 5.000,00'), equals(5000.0));
+      expect(CurrencyFormatter.parse('R\$ 5000'), equals(5000.0));
+      expect(CurrencyFormatter.parse('1.000.000'), equals(1000000.0));
+      expect(CurrencyFormatter.parse('1.000.000,00'), equals(1000000.0));
+      expect(CurrencyFormatter.parse('1.000.000,50'), equals(1000000.50));
+    });
+
+    test('Retorna 0.0 para entradas vazias ou apenas espaços', () {
+      expect(CurrencyFormatter.parse(''), equals(0.0));
+      expect(CurrencyFormatter.parse('   '), equals(0.0));
+    });
+  });
   group('FinancialCalculator Unit Tests', () {
     test('Calcula meta de patrimônio para renda perpétua corretamente', () {
       const input = FinancialInput(

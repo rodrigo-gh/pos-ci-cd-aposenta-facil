@@ -73,6 +73,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   final FocusNode _currentAgeFocus = FocusNode();
   final FocusNode _targetAgeFocus = FocusNode();
+  final FocusNode _desiredIncomeFocus = FocusNode();
+  final FocusNode _initialWealthFocus = FocusNode();
 
   bool _hasInitialWealth = true;
   double _monthlyRate = AppConstants.defaultMonthlyRate;
@@ -83,7 +85,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   @override
   void initState() {
     super.initState();
-    // Valida e formata os campos de idade quando o usuário conclui a digitação (perda de foco)
+    // Valida e formata os campos quando o usuário conclui a digitação (perda de foco)
     _currentAgeFocus.addListener(() {
       if (!_currentAgeFocus.hasFocus) {
         _validateAndNormalizeAges();
@@ -94,6 +96,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         _validateAndNormalizeAges();
       }
     });
+    _desiredIncomeFocus.addListener(() {
+      if (!_desiredIncomeFocus.hasFocus) {
+        _normalizeDesiredIncome();
+      }
+    });
+    _initialWealthFocus.addListener(() {
+      if (!_initialWealthFocus.hasFocus) {
+        _normalizeInitialWealth();
+      }
+    });
     _calculate();
   }
 
@@ -101,11 +113,28 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   void dispose() {
     _currentAgeFocus.dispose();
     _targetAgeFocus.dispose();
+    _desiredIncomeFocus.dispose();
+    _initialWealthFocus.dispose();
     _currentAgeController.dispose();
     _targetAgeController.dispose();
     _desiredIncomeController.dispose();
     _initialWealthController.dispose();
     super.dispose();
+  }
+
+  /// Normaliza o campo de renda desejada após o usuário concluir a digitação
+  void _normalizeDesiredIncome() {
+    final val = CurrencyFormatter.parse(_desiredIncomeController.text);
+    final normalized = val > 0 ? val : AppConstants.minDesiredIncome;
+    _desiredIncomeController.text = CurrencyFormatter.formatDecimal(normalized);
+    _calculate();
+  }
+
+  /// Normaliza o campo de patrimônio inicial após o usuário concluir a digitação
+  void _normalizeInitialWealth() {
+    final val = CurrencyFormatter.parse(_initialWealthController.text);
+    _initialWealthController.text = CurrencyFormatter.formatDecimal(val);
+    _calculate();
   }
 
   /// Valida e normaliza as idades somente após o usuário terminar de digitar (perda de foco ou submissão)
@@ -290,12 +319,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                 targetAgeFocusNode: _targetAgeFocus,
                                 desiredIncomeController: _desiredIncomeController,
                                 initialWealthController: _initialWealthController,
+                                desiredIncomeFocusNode: _desiredIncomeFocus,
+                                initialWealthFocusNode: _initialWealthFocus,
                                 hasInitialWealth: _hasInitialWealth,
                                 monthlyRate: _monthlyRate,
                                 selectedPreset: _selectedPreset,
                                 onCalculate: _calculate,
                                 onAdjustAge: (delta, ctrl) => _adjustAge(delta, ctrl),
                                 onAgeEditingComplete: _validateAndNormalizeAges,
+                                onDesiredIncomeEditingComplete: _normalizeDesiredIncome,
+                                onInitialWealthEditingComplete: _normalizeInitialWealth,
                                 onToggleInitialWealth: (val) {
                                   setState(() => _hasInitialWealth = val);
                                   _calculate();
@@ -334,12 +367,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                           targetAgeFocusNode: _targetAgeFocus,
                           desiredIncomeController: _desiredIncomeController,
                           initialWealthController: _initialWealthController,
+                          desiredIncomeFocusNode: _desiredIncomeFocus,
+                          initialWealthFocusNode: _initialWealthFocus,
                           hasInitialWealth: _hasInitialWealth,
                           monthlyRate: _monthlyRate,
                           selectedPreset: _selectedPreset,
                           onCalculate: _calculate,
                           onAdjustAge: (delta, ctrl) => _adjustAge(delta, ctrl),
                           onAgeEditingComplete: _validateAndNormalizeAges,
+                          onDesiredIncomeEditingComplete: _normalizeDesiredIncome,
+                          onInitialWealthEditingComplete: _normalizeInitialWealth,
                           onToggleInitialWealth: (val) {
                             setState(() => _hasInitialWealth = val);
                             _calculate();

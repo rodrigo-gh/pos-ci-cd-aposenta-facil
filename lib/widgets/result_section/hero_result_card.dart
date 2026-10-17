@@ -267,7 +267,7 @@ class HeroResultCard extends StatelessWidget {
             icon: Icons.savings_outlined,
             iconColor: colors.tertiary,
             value: CurrencyFormatter.format(result.targetWealth),
-            subtitle: 'Gera R\$ $desiredIncomeText/mês de renda perpétua',
+            subtitle: 'Gera ${CurrencyFormatter.format(CurrencyFormatter.parse(desiredIncomeText))}/mês de renda perpétua',
           ),
           MetricSubCard(
             title: 'PRAZO TOTAL',
