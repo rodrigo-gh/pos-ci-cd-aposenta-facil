@@ -95,7 +95,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPr
 
     if (targetAge <= currentAge) {
       targetAge = currentAge + 1;
-      _targetAgeController.text = targetAge.toString();
     }
 
     final desiredIncome = _parseCurrency(_desiredIncomeController.text);
@@ -908,7 +907,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPr
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Meta Alcançável aos ${_targetAgeController.text} anos',
+                          'Meta Alcançável aos ${(int.tryParse(_currentAgeController.text) ?? 28) + _result.totalYears} anos',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -1023,7 +1022,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> with SingleTickerPr
           targetWealth: _result.targetWealth,
           inflectionYear: _result.inflectionYear,
           currentAge: int.tryParse(_currentAgeController.text) ?? 28,
-          targetAge: int.tryParse(_targetAgeController.text) ?? 55,
+          targetAge: (int.tryParse(_currentAgeController.text) ?? 28) + _result.totalYears,
         ),
         const SizedBox(height: 24),
         // SNOWBALL EFFECT ADVISORY BOX
