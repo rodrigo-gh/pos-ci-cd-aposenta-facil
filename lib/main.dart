@@ -40,7 +40,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   final TextEditingController _initialWealthController = TextEditingController(text: '50.000,00');
 
   bool _hasInitialWealth = true;
-  double _monthlyRate = 0.006; // 0.60% a.m. real
+  double _monthlyRate = 0.0045; // 0.45% a.m. real (≈ 5.54% a.a. real - benchmark Tesouro IPCA+)
   String _selectedPreset = 'moderado';
 
   late FinancialResult _result;
@@ -136,7 +136,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       _desiredIncomeController.text = '10.000,00';
       _hasInitialWealth = true;
       _initialWealthController.text = '50.000,00';
-      _monthlyRate = 0.006;
+      _monthlyRate = 0.0045;
       _selectedPreset = 'moderado';
     });
     _calculate();
@@ -218,6 +218,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               Text(
                 'Utiliza o cálculo padrão de anuidade com juros compostos: PMT = [ (P_alvo - FV_inicial) * i ] / [ (1 + i)^n - 1 ].',
                 style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant, fontFamily: 'monospace'),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '4. Patrimônio Inicial e Efeito Tempo',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.onSurface),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Em prazos longos (30 a 40 anos), os juros compostos multiplicam o capital inicial em várias vezes seu poder de compra real. Caso o saldo inicial sozinho atinja a meta no prazo, o aporte necessário é R\$ 0,00, e o simulador indica a idade exata de autossustentabilidade e oportunidades de antecipação.',
+                style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
               ),
             ],
           ),
@@ -562,10 +572,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             style: const TextStyle(color: AppColors.secondary, fontSize: 11),
           ),
           Slider(
-            value: _monthlyRate,
-            min: 0.003,
-            max: 0.011,
-            divisions: 16,
+            value: _monthlyRate.clamp(0.002, 0.008),
+            min: 0.002,
+            max: 0.008,
+            divisions: 12,
             activeColor: AppColors.tertiary,
             inactiveColor: AppColors.surfaceContainerHighest,
             onChanged: (v) {
@@ -576,19 +586,19 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               _calculate();
             },
           ),
-          // Presets buttons
+          // Presets buttons alinhados a padrões de mercado (ANBIMA / Tesouro IPCA+)
           Row(
             children: [
               Expanded(
-                child: _buildPresetButton('Conservador', '0,45% a.m.', 'conservador', 0.0045),
+                child: _buildPresetButton('Conservador', '0,35% a.m.', 'conservador', 0.0035),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildPresetButton('Moderado', '0,60% a.m.', 'moderado', 0.0060),
+                child: _buildPresetButton('Moderado', '0,45% a.m.', 'moderado', 0.0045),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildPresetButton('Agressivo', '0,75% a.m.', 'agressivo', 0.0075),
+                child: _buildPresetButton('Agressivo', '0,55% a.m.', 'agressivo', 0.0055),
               ),
             ],
           ),
@@ -797,9 +807,20 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       color: AppColors.surfaceContainerLowest.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(99),
                     ),
-                    child: Text(
-                      'Meta aos $finalAge anos',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_result.isGoalReachedByInitialWealth) ...[
+                          const Icon(Icons.verified, size: 14, color: AppColors.tertiary),
+                          const SizedBox(width: 6),
+                        ],
+                        Text(
+                          _result.isGoalReachedByInitialWealth
+                              ? 'Meta Atingível aos ${_result.organicGoalAge?.toStringAsFixed(1) ?? finalAge.toString()} anos'
+                              : 'Meta aos $finalAge anos',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+                        ),
+                      ],
                     ),
                   ),
                   Text(
@@ -809,46 +830,141 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
-                'APORTE MENSAL RECOMENDADO',
-                style: TextStyle(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 11,
-                  letterSpacing: 1.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                children: [
-                  Text(
-                    _currencyFormat.format(_result.monthlyContribution),
-                    style: const TextStyle(
-                      fontSize: 38,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                      color: AppColors.onSurface,
-                      letterSpacing: -1,
-                    ),
+              if (_result.isGoalReachedByInitialWealth) ...[
+                const Text(
+                  'APORTE MENSAL ADICIONAL',
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 11,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const Text(
-                    '/ mês',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.tertiary,
-                      fontFamily: 'monospace',
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      _currencyFormat.format(0.0),
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'monospace',
+                        color: AppColors.onSurface,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.tertiary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.tertiary.withValues(alpha: 0.4)),
+                      ),
+                      child: const Text(
+                        '100% coberto pelo patrimônio atual',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.tertiary),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Seu saldo inicial de ${_currencyFormat.format(_hasInitialWealth ? _parseCurrency(_initialWealthController.text) : 0)} já rende juros compostos suficientes para alcançar o patrimônio alvo de ${_currencyFormat.format(_result.targetWealth)} aos ${_result.organicGoalAge?.toStringAsFixed(1) ?? finalAge.toString()} anos.',
+                  style: const TextStyle(color: AppColors.onSurface, fontSize: 12, height: 1.4),
+                ),
+                if (_result.acceleratedAgeWith500 != null && _result.acceleratedAgeWith500! < (_result.organicGoalAge ?? finalAge.toDouble())) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLowest.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.outlineVariant),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.bolt, color: AppColors.primary, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Dica de Aceleração: Se você aportar R\$ 500,00/mês, sua aposentadoria é antecipada para os ${_result.acceleratedAgeWith500!.toStringAsFixed(1)} anos (você conquista a liberdade financeira ${((_result.organicGoalAge ?? finalAge.toDouble()) - _result.acceleratedAgeWith500!).round()} anos mais cedo)!',
+                            style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 11, height: 1.35),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Valores constantes em moeda de hoje (poder de compra preservado).',
-                style: TextStyle(color: AppColors.secondary, fontSize: 12),
-              ),
+              ] else ...[
+                const Text(
+                  'APORTE MENSAL RECOMENDADO',
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 11,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  children: [
+                    Text(
+                      _currencyFormat.format(_result.monthlyContribution),
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'monospace',
+                        color: AppColors.onSurface,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    const Text(
+                      '/ mês',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.tertiary,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+                if (_result.monthlyContribution < 25.0) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.outlineVariant),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: AppColors.secondary, size: 15),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Meta residual: Seu patrimônio inicial já cobre quase a totalidade da meta. O aporte de ${_currencyFormat.format(_result.monthlyContribution)}/mês é apenas o pequeno complemento para fechar os 100%.',
+                            style: const TextStyle(color: AppColors.secondary, fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Valores constantes em moeda de hoje (poder de compra preservado).',
+                    style: TextStyle(color: AppColors.secondary, fontSize: 12),
+                  ),
+                ],
+              ],
               const SizedBox(height: 20),
               // Sub cards
               LayoutBuilder(
@@ -868,7 +984,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       iconColor: AppColors.primary,
                       value: '${_result.totalYears} anos',
                       valueColor: AppColors.primary,
-                      subtitle: '${_result.totalMonths} aportes mensais programados',
+                      subtitle: _result.isGoalReachedByInitialWealth
+                          ? 'Atingido aos ${_result.organicGoalAge?.toStringAsFixed(1) ?? finalAge.toString()} anos'
+                          : '${_result.totalMonths} aportes mensais programados',
                     ),
                   ];
 

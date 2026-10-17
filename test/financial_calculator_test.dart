@@ -62,23 +62,42 @@ void main() {
       expect(result.monthlyContribution, 0.0);
     });
 
-    test('Gera a curva de projeção anual com pontos válidos', () {
+    test('Detecta meta autossustentável e calcula idade de independência orgânica', () {
       const input = FinancialInput(
-        currentAge: 25,
-        targetAge: 50,
-        desiredMonthlyIncome: 5000.0,
-        initialWealth: 10000.0,
-        monthlyInterestRate: 0.006,
+        currentAge: 28,
+        targetAge: 68,
+        desiredMonthlyIncome: 10000.0,
+        initialWealth: 100000.0,
+        monthlyInterestRate: 0.006, // 0.6% a.m.
       );
 
       final result = FinancialCalculator.calculate(input);
 
-      // 25 anos de projeção -> 26 pontos (0 até 25)
-      expect(result.projection.length, 26);
-      expect(result.projection.first.age, 25);
-      expect(result.projection.last.age, 50);
-      expect(result.projection.first.totalWealth, closeTo(10000.0, 0.01));
-      expect(result.projection.last.totalWealth, greaterThanOrEqualTo(result.targetWealth * 0.99));
+      expect(result.monthlyContribution, 0.0);
+      expect(result.isGoalReachedByInitialWealth, isTrue);
+      expect(result.organicGoalAge, isNotNull);
+      // ln(16.666)/ln(1.006) = ~470 meses = ~39.2 anos -> 28 + 39.2 = ~67.2 anos
+      expect(result.organicGoalAge!, closeTo(67.2, 0.5));
+      expect(result.acceleratedAgeWith500, isNotNull);
+      expect(result.acceleratedAgeWith500!, lessThan(result.organicGoalAge!));
+    });
+
+    test('Com taxa padrão moderada de 0.45% a.m., aporte mensal é consistente e positivo', () {
+      const input = FinancialInput(
+        currentAge: 28,
+        targetAge: 68,
+        desiredMonthlyIncome: 10000.0,
+        initialWealth: 100000.0,
+        monthlyInterestRate: 0.0045, // 0.45% a.m. (Tesouro IPCA+)
+      );
+
+      final result = FinancialCalculator.calculate(input);
+
+      // Meta = 10000 / 0.0045 = ~2.222.222
+      expect(result.targetWealth, closeTo(2222222.22, 0.01));
+      expect(result.monthlyContribution, greaterThan(700.0));
+      expect(result.monthlyContribution, lessThan(950.0));
+      expect(result.isGoalReachedByInitialWealth, isFalse);
     });
   });
 }

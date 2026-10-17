@@ -21,7 +21,7 @@ class FinancialCalculator {
     // 3. Montante remanescente a ser acumulado via aportes mensais
     final double remainingTarget = math.max(0.0, targetWealth - fvInitial);
 
-    // 4. Cálculo do Aporte Mensal (PMT)
+    // 4. Cálculo do Aporte Mensal (PMT - ordinary annuity / postcipado)
     double monthlyContribution = 0.0;
     if (remainingTarget > 0) {
       final double compoundFactor = math.pow(1.0 + safeRate, totalMonths) - 1.0;
@@ -30,18 +30,38 @@ class FinancialCalculator {
       }
     }
 
-    // 5. Total aportado do bolso e juros acumulados
-    final double totalDeposited = initialWealth + (monthlyContribution * totalMonths);
-    final double totalInterest = math.max(0.0, targetWealth - totalDeposited);
-
-    int depositPercent = 0;
-    int interestPercent = 0;
-    if (targetWealth > 0) {
-      depositPercent = ((totalDeposited / targetWealth) * 100).round().clamp(1, 100);
-      interestPercent = (100 - depositPercent).clamp(0, 99);
+    // 5. Verificação de Meta Autossustentável (atingida organicamente pelo patrimônio inicial)
+    bool isGoalReachedByInitial = false;
+    double? organicGoalAge;
+    if (initialWealth > 0 && targetWealth > 0) {
+      if (initialWealth >= targetWealth) {
+        isGoalReachedByInitial = true;
+        organicGoalAge = input.currentAge.toDouble();
+      } else {
+        final double organicMonths = math.log(targetWealth / initialWealth) / math.log(1.0 + safeRate);
+        if (organicMonths <= totalMonths) {
+          isGoalReachedByInitial = true;
+          organicGoalAge = input.currentAge + (organicMonths / 12.0);
+        }
+      }
     }
 
-    // 6. Projeção anual da curva de evolução
+    // 6. Estimativa de Aceleração com aporte moderado de R$ 500/mês
+    double? acceleratedAgeWith500;
+    const double testPMT = 500.0;
+    if (targetWealth > initialWealth) {
+      final double pmtOverRate = testPMT / safeRate;
+      final double numerator = targetWealth + pmtOverRate;
+      final double denominator = initialWealth + pmtOverRate;
+      if (denominator > 0 && numerator > denominator) {
+        final double accMonths = math.log(numerator / denominator) / math.log(1.0 + safeRate);
+        if (accMonths > 0 && accMonths < totalMonths) {
+          acceleratedAgeWith500 = input.currentAge + (accMonths / 12.0);
+        }
+      }
+    }
+
+    // 7. Projeção anual da curva de evolução
     final List<YearlyDataPoint> projection = [];
     int? inflectionYear;
     double currentAccumulated = initialWealth;
@@ -58,7 +78,7 @@ class FinancialCalculator {
         if (inflectionYear == null && y > 0 && monthlyInterestGenerated >= monthlyContribution && monthlyContribution > 0) {
           inflectionYear = y;
         }
-        accumulatedNextYear = (accumulatedNextYear + monthlyContribution) * (1.0 + safeRate);
+        accumulatedNextYear = (accumulatedNextYear * (1.0 + safeRate)) + monthlyContribution;
       }
 
       final double interestInYear = math.max(0.0, (accumulatedNextYear - currentAccumulated) - (monthlyContribution * 12));
@@ -75,6 +95,19 @@ class FinancialCalculator {
       currentAccumulated = accumulatedNextYear;
     }
 
+    // 8. Total aportado do bolso e juros acumulados sobre o patrimônio final real
+    final double projectedFinalWealth = projection.isNotEmpty ? projection.last.totalWealth : fvInitial;
+    final double totalDeposited = initialWealth + (monthlyContribution * totalMonths);
+    final double totalInterest = math.max(0.0, projectedFinalWealth - totalDeposited);
+
+    int depositPercent = 0;
+    int interestPercent = 0;
+    final double baseWealth = math.max(projectedFinalWealth, targetWealth);
+    if (baseWealth > 0) {
+      depositPercent = ((totalDeposited / baseWealth) * 100).round().clamp(1, 100);
+      interestPercent = (100 - depositPercent).clamp(0, 99);
+    }
+
     return FinancialResult(
       targetWealth: targetWealth,
       monthlyContribution: monthlyContribution,
@@ -86,6 +119,10 @@ class FinancialCalculator {
       totalMonths: totalMonths,
       projection: projection,
       inflectionYear: inflectionYear,
+      isGoalReachedByInitialWealth: isGoalReachedByInitial,
+      organicGoalAge: organicGoalAge,
+      projectedFinalWealth: projectedFinalWealth,
+      acceleratedAgeWith500: acceleratedAgeWith500,
     );
   }
 }

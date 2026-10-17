@@ -62,6 +62,10 @@ class FinancialResult {
   final int totalMonths;
   final List<YearlyDataPoint> projection;
   final int? inflectionYear; // Year when monthly interest exceeds monthly PMT
+  final bool isGoalReachedByInitialWealth;
+  final double? organicGoalAge; // Age when initial wealth alone achieves target
+  final double projectedFinalWealth; // Real final accumulated wealth
+  final double? acceleratedAgeWith500; // Age if adding R$ 500/m
 
   const FinancialResult({
     required this.targetWealth,
@@ -74,5 +78,9 @@ class FinancialResult {
     required this.totalMonths,
     required this.projection,
     this.inflectionYear,
+    this.isGoalReachedByInitialWealth = false,
+    this.organicGoalAge,
+    this.projectedFinalWealth = 0.0,
+    this.acceleratedAgeWith500,
   });
 }
